@@ -1,0 +1,92 @@
+#include <LiquidCrystal.h>
+const int rs = A0, en = A1, d4 = A2, d5 = A3, d6 = A4, d7 = A5;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+
+#define MQ135Pin A6
+const int DOUTpin3 = 2;
+int limit3;
+int value3;
+
+int buzzer = 11;
+int led = 12;
+
+#define serial
+
+void message1(void);
+
+void setup()
+{
+  Serial.begin(9600);//sets the baud rate
+
+  pinMode(buzzer, OUTPUT);
+  pinMode(led, OUTPUT);
+    digitalWrite(buzzer, LOW);
+    digitalWrite(led, LOW);
+ 
+  lcd.begin(16, 2);
+
+  lcd.setCursor(0, 0);
+  lcd.print("GasLeakageDetect");
+  delay(2000);
+}
+
+void loop()
+{
+  /*..........GAS (MQ135)..........*/
+  value3 = analogRead(MQ135Pin);
+  limit3 = digitalRead(DOUTpin3);
+
+  #ifdef serial
+  Serial.print("MQ135 value: ");
+  Serial.print(value3);//prints the alcohol value
+  Serial.print("  Limit: ");
+  Serial.println(limit3);/*prints the limit reached as either LOW or HIGH (above or underneath) */
+  #endif
+ 
+  lcd.setCursor(0, 1);
+  lcd.print("MQ135 Value:");
+  lcd.print(value3);
+  lcd.print("  ");
+ 
+  delay(500);
+ 
+  #ifdef serial
+  Serial.println("******************************************************");
+  Serial.println("         ");
+  #endif
+ 
+  if(limit3 == 0)
+  {
+    digitalWrite(buzzer, HIGH);
+    digitalWrite(led, HIGH);
+
+    delay(200);
+    message1();
+    Serial.println();
+    delay(200);
+   
+    delay(1000);
+  }
+  else
+  {
+    digitalWrite(buzzer, LOW);
+    digitalWrite(led, LOW);
+    delay(200);
+  }
+ 
+  delay(2000);
+}
+
+void message1(void)
+{
+  Serial.print("AT\r\n");delay(800);
+  Serial.print("AT+CMGF=1\r\n");delay(800);
+  Serial.print("AT+CMGS=");delay(500);
+  Serial.write('"');delay(500);
+  Serial.print("9600156153");delay(500);
+  Serial.write('"');
+  Serial.print("\r\n");delay(500);
+  Serial.print("'Gas Leakage Detected'\r\n");delay(500);//17
+  delay(500);
+  Serial.write(26);
+}
